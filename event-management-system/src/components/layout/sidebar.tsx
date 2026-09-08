@@ -111,29 +111,48 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
 
   const SidebarContent = () => (
     <>
-      <div className="flex h-16 items-center justify-between px-4 border-b">
-        {!isCollapsed && (
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <Calendar className="h-5 w-5 text-primary-foreground" />
+      <div className="flex h-16 items-center justify-between px-3.5 border-b">
+        {!isCollapsed ? (
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center shadow-md shadow-rose-500/20">
+              <span className="text-white font-extrabold text-sm">✕</span>
             </div>
-            <span className="font-bold text-lg">EMS</span>
+            <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+              Ticzi.
+            </span>
+          </Link>
+        ) : (
+          <Link href="/dashboard" className="mx-auto">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center shadow-md shadow-rose-500/20">
+              <span className="text-white font-extrabold text-xs">✕</span>
+            </div>
           </Link>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden lg:flex"
-        >
-          <ChevronLeft
-            className={cn(
-              'h-4 w-4 transition-transform',
-              isCollapsed && 'rotate-180'
-            )}
-          />
-        </Button>
+        {!isCollapsed && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="hidden lg:flex h-8 w-8 text-muted-foreground hover:text-foreground"
+            title="Sembunyikan Sidebar"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        )}
       </div>
+      {isCollapsed && (
+        <div className="hidden lg:flex justify-center py-2 border-b">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsCollapsed(false)}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            title="Buka Sidebar"
+          >
+            <ChevronLeft className="h-4 w-4 rotate-180" />
+          </Button>
+        </div>
+      )}
 
       <nav className="flex-1 overflow-y-auto p-2">
         <ul className="space-y-1">
@@ -207,10 +226,12 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
           <Menu className="h-5 w-5" />
         </Button>
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-            <Calendar className="h-5 w-5 text-primary-foreground" />
+          <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center shadow-md shadow-rose-500/20">
+            <span className="text-white font-extrabold text-xs">✕</span>
           </div>
-          <span className="font-bold text-lg">EMS</span>
+          <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+            Ticzi.
+          </span>
         </Link>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -263,17 +284,17 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
       {/* Mobile sidebar */}
       <aside
         className={cn(
-          'lg:hidden fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-background transition-transform duration-300',
+          'lg:hidden fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-background transition-transform duration-300 shadow-xl',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <SidebarContent />
       </aside>
 
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar - sticky in flow so content is never covered */}
       <aside
         className={cn(
-          'hidden lg:flex fixed inset-y-0 left-0 z-30 flex-col bg-background border-r transition-all duration-300',
+          'hidden lg:flex sticky top-0 h-screen shrink-0 flex-col bg-background border-r transition-all duration-300 z-30',
           isCollapsed ? 'w-16' : 'w-64'
         )}
       >

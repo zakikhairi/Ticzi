@@ -69,7 +69,7 @@ export default function DashboardLayout({
         }}
         onSignOut={handleSignOut}
       />
-      <main className="flex-1 pt-16 lg:pt-0">
+      <main className="flex-1 min-w-0 pt-16 lg:pt-0">
         <div className="container mx-auto p-4 lg:p-8">{children}</div>
       </main>
     </div>
