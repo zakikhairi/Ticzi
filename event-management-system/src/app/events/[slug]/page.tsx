@@ -43,16 +43,26 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   }
 
   // Check if current user is already registered for this event
-  const existingUserRegistration = session?.user
-    ? await prisma.registration.findUnique({
-        where: {
-          eventId_participantId: {
-            eventId: event.id,
-            participantId: session.user.id,
-          },
+  let existingUserRegistration = null;
+  if (session?.user) {
+    let participantId = session.user.id;
+    if (session.user.email) {
+      const dbUser = await prisma.user.findUnique({
+        where: { email: session.user.email.trim().toLowerCase() },
+        select: { id: true },
+      });
+      if (dbUser) participantId = dbUser.id;
+    }
+
+    existingUserRegistration = await prisma.registration.findUnique({
+      where: {
+        eventId_participantId: {
+          eventId: event.id,
+          participantId,
         },
-      })
-    : null;
+      },
+    });
+  }
 
   const isRegistrationOpen =
     event.status === 'PUBLISHED' &&

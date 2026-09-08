@@ -37,8 +37,20 @@ export async function POST(
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
+    // Ensure valid participantId from DB (handles stale JWT cookies)
+    let participantId = session.user.id;
+    if (session.user.email) {
+      const dbUser = await prisma.user.findUnique({
+        where: { email: session.user.email.trim().toLowerCase() },
+        select: { id: true },
+      });
+      if (dbUser) {
+        participantId = dbUser.id;
+      }
+    }
+
     // Perform registration
-    const registration = await registerForEvent(session.user.id, {
+    const registration = await registerForEvent(participantId, {
       eventId,
       ticketId: body.ticketId,
       fullName: body.fullName,
@@ -50,7 +62,7 @@ export async function POST(
 
     // Create audit log
     await createAuditLog({
-      userId: session.user.id,
+      userId: participantId,
       action: 'REGISTRATION',
       entity: 'Registration',
       entityId: registration.id,

@@ -86,8 +86,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.id as string;
+        session.user.id = (token.id || token.sub) as string;
         session.user.role = token.role as UserRole;
+
+        // Auto-heal session ID from database in case database was re-seeded/reset
+        if (session.user.email) {
+          try {
+            const dbUser = await prisma.user.findUnique({
+              where: { email: session.user.email.trim().toLowerCase() },
+              select: { id: true, role: true },
+            });
+            if (dbUser) {
+              session.user.id = dbUser.id;
+              session.user.role = dbUser.role;
+            }
+          } catch (e) {
+            // fallback to token id
+          }
+        }
       }
       return session;
     },
