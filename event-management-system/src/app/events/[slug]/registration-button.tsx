@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
@@ -42,6 +43,7 @@ interface RegistrationButtonProps {
   tickets: Ticket[];
   hasMaxParticipants: boolean;
   spotsRemaining: number | null;
+  existingRegistrationId?: string | null;
 }
 
 export function RegistrationButton({
@@ -49,11 +51,13 @@ export function RegistrationButton({
   tickets,
   hasMaxParticipants,
   spotsRemaining,
+  existingRegistrationId,
 }: RegistrationButtonProps) {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [open, setOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [formError, setFormError] = React.useState<string | null>(null);
   const [selectedTicket, setSelectedTicket] = React.useState<string>('');
   const [formData, setFormData] = React.useState({
     fullName: '',
@@ -79,20 +83,25 @@ export function RegistrationButton({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
 
     if (!selectedTicket) {
+      const err = 'Silakan pilih jenis tiket terlebih dahulu';
+      setFormError(err);
       toast({
-        title: 'Error',
-        description: 'Please select a ticket type',
+        title: 'Tiket Belum Dipilih',
+        description: err,
         variant: 'destructive',
       });
       return;
     }
 
     if (!formData.fullName || !formData.email) {
+      const err = 'Nama lengkap dan email wajib diisi';
+      setFormError(err);
       toast({
-        title: 'Error',
-        description: 'Please fill in all required fields',
+        title: 'Data Belum Lengkap',
+        description: err,
         variant: 'destructive',
       });
       return;
@@ -113,26 +122,30 @@ export function RegistrationButton({
       const result = await response.json();
 
       if (!response.ok) {
+        const errMsg = result.error || 'Terjadi kesalahan saat pendaftaran event';
+        setFormError(errMsg);
         toast({
-          title: 'Registration Failed',
-          description: result.error || 'Something went wrong',
+          title: 'Pendaftaran Gagal',
+          description: errMsg,
           variant: 'destructive',
         });
         return;
       }
 
       toast({
-        title: 'Registration Successful!',
-        description: 'You have been registered for this event.',
+        title: 'Pendaftaran Berhasil!',
+        description: 'Anda berhasil terdaftar. Membuka tiket Anda...',
       });
 
       setOpen(false);
       router.push(`/my-tickets/${result.registration.id}`);
       router.refresh();
-    } catch (error) {
+    } catch (error: any) {
+      const errMsg = error.message || 'Gagal terhubung ke server. Silakan coba lagi.';
+      setFormError(errMsg);
       toast({
         title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        description: errMsg,
         variant: 'destructive',
       });
     } finally {
@@ -141,19 +154,38 @@ export function RegistrationButton({
   };
 
   if (status === 'loading') {
-    return <Button disabled>Loading...</Button>;
+    return <Button disabled className="w-full">Memuat...</Button>;
+  }
+
+  // Already registered: direct link to ticket
+  if (existingRegistrationId) {
+    return (
+      <div className="space-y-2">
+        <Button
+          asChild
+          className="w-full rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 shadow-md shadow-emerald-600/20"
+        >
+          <Link href={`/my-tickets/${existingRegistrationId}`}>
+            ✓ Anda Sudah Terdaftar (Buka Tiket)
+          </Link>
+        </Button>
+        <p className="text-center text-xs text-muted-foreground">
+          Tiket Anda aktif untuk event ini.
+        </p>
+      </div>
+    );
   }
 
   if (!session) {
     return (
       <div className="space-y-3">
-        <Button asChild className="w-full">
-          <a href="/login?callbackUrl=/events">Login to Register</a>
+        <Button asChild className="w-full rounded-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-semibold">
+          <a href={`/login?callbackUrl=/events`}>Masuk untuk Mendaftar</a>
         </Button>
         <p className="text-center text-sm text-muted-foreground">
-          Don't have an account?{' '}
-          <a href="/register" className="text-primary hover:underline">
-            Sign up
+          Belum punya akun?{' '}
+          <a href="/register" className="text-rose-600 dark:text-rose-400 font-semibold hover:underline">
+            Daftar Akun
           </a>
         </p>
       </div>
@@ -162,25 +194,34 @@ export function RegistrationButton({
 
   if (isSoldOut) {
     return (
-      <Button disabled className="w-full">
-        Sold Out
+      <Button disabled className="w-full rounded-full">
+        Tiket Habis (Sold Out)
       </Button>
     );
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); setFormError(null); }}>
       <DialogTrigger asChild>
-        <Button className="w-full">Register Now</Button>
+        <Button className="w-full rounded-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-semibold py-2.5 shadow-md shadow-rose-500/20">
+          Daftar Sekarang
+        </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] rounded-3xl">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Event Registration</DialogTitle>
+            <DialogTitle>Pendaftaran Event</DialogTitle>
             <DialogDescription>
-              Fill in your details to register for this event
+              Lengkapi data di bawah ini untuk mengonfirmasi tiket Anda
             </DialogDescription>
           </DialogHeader>
+
+          {formError && (
+            <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-900 text-red-700 dark:text-red-300 text-xs font-semibold flex items-center gap-2">
+              <span>⚠️</span>
+              <span className="flex-1">{formError}</span>
+            </div>
+          )}
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="ticket">Ticket Type *</Label>
@@ -269,9 +310,13 @@ export function RegistrationButton({
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={loading}>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-semibold py-2.5 shadow-md shadow-rose-500/20"
+            >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Complete Registration
+              {loading ? 'Memproses Pendaftaran...' : 'Konfirmasi Pendaftaran'}
             </Button>
           </DialogFooter>
         </form>

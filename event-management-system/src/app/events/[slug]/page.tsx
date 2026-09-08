@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import prisma from '@/lib/prisma';
+import { auth } from '@/lib/auth';
 import { RegistrationButton } from './registration-button';
 import { PublicHeader } from '@/components/layout/public-header';
 import { formatCurrency } from '@/lib/utils';
@@ -16,6 +17,7 @@ interface EventDetailPageProps {
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
   const { slug } = await params;
+  const session = await auth();
 
   const event = await prisma.event.findUnique({
     where: { slug },
@@ -37,6 +39,18 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   if (!event) {
     notFound();
   }
+
+  // Check if current user is already registered for this event
+  const existingUserRegistration = session?.user
+    ? await prisma.registration.findUnique({
+        where: {
+          eventId_participantId: {
+            eventId: event.id,
+            participantId: session.user.id,
+          },
+        },
+      })
+    : null;
 
   const isRegistrationOpen =
     event.status === 'PUBLISHED' &&
@@ -249,6 +263,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                     tickets={event.tickets}
                     hasMaxParticipants={!!event.maxParticipants}
                     spotsRemaining={spotsRemaining}
+                    existingRegistrationId={existingUserRegistration?.id || null}
                   />
                 ) : (
                   <div className="rounded-lg bg-muted p-4 text-center">

@@ -68,17 +68,9 @@ export async function POST(
   } catch (error: any) {
     console.error('Registration error:', error);
 
-    if (error.message === 'You have already registered for this event') {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    if (error.message?.includes('Ticket')) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
     return NextResponse.json(
-      { error: 'Something went wrong' },
-      { status: 500 }
+      { error: error.message || 'Terjadi kesalahan saat pendaftaran tiket' },
+      { status: 400 }
     );
   }
 }

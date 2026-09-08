@@ -18,15 +18,16 @@ export async function POST(request: Request) {
     }
 
     const { name, email, password, phone, institution } = validation.data;
+    const normalizedEmail = email.trim().toLowerCase();
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Email already registered' },
+        { error: 'Email sudah terdaftar. Silakan gunakan email lain atau login.' },
         { status: 400 }
       );
     }
@@ -37,11 +38,11 @@ export async function POST(request: Request) {
     // Create user
     const user = await prisma.user.create({
       data: {
-        name,
-        email,
+        name: name.trim(),
+        email: normalizedEmail,
         password: hashedPassword,
-        phone,
-        institution,
+        phone: phone ? phone.trim() : null,
+        institution: institution ? institution.trim() : null,
         role: 'PARTICIPANT',
       },
       select: {
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
 
     // Create audit log
     await createAuditLog({
+      userId: user.id,
       action: 'REGISTER',
       entity: 'User',
       entityId: user.id,
@@ -62,13 +64,13 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(
-      { message: 'Account created successfully', user },
+      { message: 'Akun berhasil dibuat. Silakan login.', user },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Registration error:', error);
     return NextResponse.json(
-      { error: 'Something went wrong' },
+      { error: error.message || 'Terjadi kesalahan sistem saat pendaftaran akun' },
       { status: 500 }
     );
   }
