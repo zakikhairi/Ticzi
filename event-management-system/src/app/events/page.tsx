@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PublicHeader } from '@/components/layout/public-header';
 import { getEvents } from '@/services/event.service';
 import type { EventWithRelations, Category } from '@/types';
 
@@ -91,7 +92,9 @@ function EventsPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
+      <PublicHeader />
+
       {/* Header */}
       <div className="bg-primary/5 border-b">
         <div className="container mx-auto px-4 py-8">
@@ -114,12 +117,15 @@ function EventsPageContent() {
               onChange={(e) => updateParams('search', e.target.value)}
             />
           </div>
-          <Select value={category} onValueChange={(v) => updateParams('category', v)}>
+          <Select
+            value={category || 'ALL'}
+            onValueChange={(v) => updateParams('category', v === 'ALL' ? '' : v)}
+          >
             <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="ALL">All Categories</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>
                   {cat.name}
@@ -127,12 +133,15 @@ function EventsPageContent() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={status} onValueChange={(v) => updateParams('status', v)}>
+          <Select
+            value={status || 'ALL'}
+            onValueChange={(v) => updateParams('status', v === 'ALL' ? '' : v)}
+          >
             <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="ALL">All Status</SelectItem>
               <SelectItem value="PUBLISHED">Published</SelectItem>
               <SelectItem value="ONGOING">Ongoing</SelectItem>
               <SelectItem value="COMPLETED">Completed</SelectItem>

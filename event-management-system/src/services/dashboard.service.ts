@@ -44,15 +44,19 @@ export async function getOrganizerDashboardStats(organizerId: string): Promise<D
   };
 }
 
-export async function getRegistrationTrend(organizerId: string, days = 30) {
+export async function getRegistrationTrend(organizerId?: string, days = 30) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
 
+  const where: any = {
+    registeredAt: { gte: startDate },
+  };
+  if (organizerId) {
+    where.event = { organizerId };
+  }
+
   const registrations = await prisma.registration.findMany({
-    where: {
-      event: { organizerId },
-      registeredAt: { gte: startDate },
-    },
+    where,
     select: { registeredAt: true },
     orderBy: { registeredAt: 'asc' },
   });
@@ -76,9 +80,14 @@ export async function getRegistrationTrend(organizerId: string, days = 30) {
   return result;
 }
 
-export async function getTicketSalesByEvent(organizerId: string) {
+export async function getTicketSalesByEvent(organizerId?: string) {
+  const where: any = {};
+  if (organizerId) {
+    where.organizerId = organizerId;
+  }
+
   const events = await prisma.event.findMany({
-    where: { organizerId },
+    where,
     include: {
       tickets: true,
     },
@@ -96,10 +105,15 @@ export async function getTicketSalesByEvent(organizerId: string) {
   }));
 }
 
-export async function getEventStatusDistribution(organizerId: string) {
+export async function getEventStatusDistribution(organizerId?: string) {
+  const where: any = {};
+  if (organizerId) {
+    where.organizerId = organizerId;
+  }
+
   const statusCounts = await prisma.event.groupBy({
     by: ['status'],
-    where: { organizerId },
+    where,
     _count: { status: true },
   });
 
@@ -109,9 +123,14 @@ export async function getEventStatusDistribution(organizerId: string) {
   }));
 }
 
-export async function getRecentRegistrations(organizerId: string, limit = 10) {
+export async function getRecentRegistrations(organizerId?: string, limit = 10) {
+  const where: any = {};
+  if (organizerId) {
+    where.event = { organizerId };
+  }
+
   return prisma.registration.findMany({
-    where: { event: { organizerId } },
+    where,
     take: limit,
     orderBy: { registeredAt: 'desc' },
     include: {
@@ -122,14 +141,18 @@ export async function getRecentRegistrations(organizerId: string, limit = 10) {
   });
 }
 
-export async function getUpcomingEvents(organizerId: string, limit = 5) {
+export async function getUpcomingEvents(organizerId?: string, limit = 5) {
   const now = new Date();
+  const where: any = {
+    startDate: { gte: now },
+    status: EventStatus.PUBLISHED,
+  };
+  if (organizerId) {
+    where.organizerId = organizerId;
+  }
+
   return prisma.event.findMany({
-    where: {
-      organizerId,
-      startDate: { gte: now },
-      status: EventStatus.PUBLISHED,
-    },
+    where,
     take: limit,
     orderBy: { startDate: 'asc' },
     include: {

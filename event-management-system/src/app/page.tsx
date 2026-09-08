@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PublicHeader } from '@/components/layout/public-header';
 import prisma from '@/lib/prisma';
 
 async function getFeaturedEvents() {
@@ -69,7 +70,9 @@ export default async function HomePage() {
   ];
 
   return (
-    <div className="flex-1">
+    <div className="flex-1 flex flex-col min-h-screen">
+      <PublicHeader />
+
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-primary/10 to-background py-20 lg:py-32">
         <div className="container mx-auto px-4">
@@ -101,7 +104,7 @@ export default async function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 lg:py-24">
+      <section id="features" className="py-16 lg:py-24 scroll-mt-16">
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
             <h2 className="mb-4 text-3xl font-bold tracking-tight">
@@ -132,7 +135,7 @@ export default async function HomePage() {
       </section>
 
       {/* How It Works */}
-      <section className="bg-muted/50 py-16 lg:py-24">
+      <section id="how-it-works" className="bg-muted/50 py-16 lg:py-24 scroll-mt-16">
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
             <h2 className="mb-4 text-3xl font-bold tracking-tight">

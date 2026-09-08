@@ -12,6 +12,13 @@ import {
   TrendingUp,
   Users,
   ArrowRight,
+  Shield,
+  Tags,
+  UserCog,
+  BarChart3,
+  Sliders,
+  Eye,
+  ExternalLink,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { DashboardCharts } from '@/components/dashboard/dashboard-charts';
+import { formatDate } from '@/lib/utils';
 
 interface DashboardContentProps {
   userId: string;
@@ -55,7 +63,7 @@ export function DashboardContent({ userId, userRole }: DashboardContentProps) {
   }
 
   if (userRole === 'SUPER_ADMIN') {
-    return <AdminDashboard stats={stats} />;
+    return <AdminDashboard stats={stats} recentItems={recentItems} />;
   }
 
   if (userRole === 'ORGANIZER') {
@@ -86,51 +94,174 @@ function DashboardSkeleton() {
   );
 }
 
-function AdminDashboard({ stats }: { stats: any }) {
+function AdminDashboard({ stats, recentItems }: { stats: any; recentItems: any }) {
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">System Dashboard</h1>
-        <p className="text-muted-foreground">Overview of the entire system</p>
+      {/* Header & Quick Action Buttons */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">System Administration</h1>
+          <p className="text-muted-foreground">Platform-wide health, activity metrics, and governance controls.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline" size="sm" className="gap-1.5">
+            <Link href="/users">
+              <Users className="h-4 w-4" /> Users
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="gap-1.5">
+            <Link href="/all-events">
+              <Calendar className="h-4 w-4" /> All Events
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="gap-1.5">
+            <Link href="/categories">
+              <Tags className="h-4 w-4" /> Categories
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="gap-1.5">
+            <Link href="/audit-logs">
+              <FileText className="h-4 w-4" /> Audit Logs
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="gap-1.5">
+            <Link href="/reports">
+              <BarChart3 className="h-4 w-4" /> Reports
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Metric Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard
           title="Total Users"
           value={stats?.totalUsers || 0}
           icon={Users}
-          description="Registered users"
+          description="Registered accounts"
         />
         <StatCard
           title="Organizers"
           value={stats?.totalOrganizers || 0}
-          icon={Users}
-          description="Event organizers"
+          icon={UserCog}
+          description="Event creators"
         />
         <StatCard
           title="Participants"
           value={stats?.totalParticipants || 0}
           icon={Ticket}
-          description="Event participants"
+          description="Active attendees"
         />
         <StatCard
           title="Total Events"
           value={stats?.totalEvents || 0}
           icon={Calendar}
-          description="All events"
+          description="Platform events"
         />
         <StatCard
           title="Registrations"
           value={stats?.totalRegistrations || 0}
           icon={FileText}
-          description="Total registrations"
+          description="Ticket reservations"
         />
         <StatCard
           title="Check-ins"
           value={stats?.totalCheckIns || 0}
           icon={CheckCircle}
-          description="Total check-ins"
+          description="Verified presences"
         />
+      </div>
+
+      {/* Analytics Visualizations */}
+      {recentItems?.trend && (
+        <DashboardCharts
+          trendData={recentItems.trend}
+          ticketSalesData={recentItems.ticketSales}
+          eventStatusData={recentItems.eventStatus}
+          stats={stats}
+        />
+      )}
+
+      {/* Recent Platform Activity */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Recent Events */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <div>
+              <CardTitle className="text-base font-semibold">Recent & Upcoming Events</CardTitle>
+              <CardDescription>Latest events created across the system</CardDescription>
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/all-events">
+                View All <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {recentItems?.upcoming?.length > 0 ? (
+              <div className="space-y-3">
+                {recentItems.upcoming.map((ev: any) => (
+                  <div key={ev.id} className="flex items-center justify-between p-2.5 rounded-lg border bg-card hover:bg-accent/40 transition-colors">
+                    <div className="min-w-0 pr-2">
+                      <p className="font-semibold text-sm truncate">{ev.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {formatDate(ev.startDate)} • {ev.location}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                      {ev._count?.registrations || 0} registered
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground py-4 text-center">No recent events recorded.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Audit Logs */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <div>
+              <CardTitle className="text-base font-semibold">Latest Audit Records</CardTitle>
+              <CardDescription>Security & administrative changes</CardDescription>
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/audit-logs">
+                All Logs <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {recentItems?.recentAuditLogs?.length > 0 ? (
+              <div className="space-y-3">
+                {recentItems.recentAuditLogs.map((log: any) => (
+                  <div key={log.id} className="flex items-center justify-between p-2.5 rounded-lg border bg-card hover:bg-accent/40 transition-colors">
+                    <div className="min-w-0 pr-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0">
+                          {log.action}
+                        </Badge>
+                        <span className="text-xs text-foreground font-medium truncate">
+                          {log.user?.name || 'System'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 truncate font-mono">
+                        {log.entity} {log.entityId ? `(${log.entityId.slice(0, 8)}...)` : ''}
+                      </p>
+                    </div>
+                    <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                      {formatDate(log.createdAt)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground py-4 text-center">No recent audit logs available.</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
@@ -139,9 +270,19 @@ function AdminDashboard({ stats }: { stats: any }) {
 function OrganizerDashboard({ stats, recentItems }: { stats: any; recentItems: any }) {
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Organizer Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back! Here's your event overview.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Organizer Dashboard</h1>
+          <p className="text-muted-foreground">Welcome back! Manage your events, ticketing, and live check-ins.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button asChild className="gap-2">
+            <Link href="/manage-events/create">
+              <Calendar className="h-4 w-4" />
+              Create Event
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -196,78 +337,71 @@ function OrganizerDashboard({ stats, recentItems }: { stats: any; recentItems: a
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Upcoming Events */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
-              <CardTitle>Upcoming Events</CardTitle>
-              <CardDescription>Your next events</CardDescription>
+              <CardTitle className="text-base font-semibold">Upcoming Events</CardTitle>
+              <CardDescription>Your scheduled events</CardDescription>
             </div>
             <Button asChild variant="ghost" size="sm">
               <Link href="/manage-events">
-                View All <ArrowRight className="ml-2 h-4 w-4" />
+                View All <ArrowRight className="ml-1.5 h-4 w-4" />
               </Link>
             </Button>
           </CardHeader>
           <CardContent>
             {recentItems?.upcoming?.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {recentItems.upcoming.map((event: any) => (
-                  <div key={event.id} className="flex items-center justify-between">
+                  <div key={event.id} className="flex items-center justify-between p-2.5 rounded-lg border bg-card hover:bg-accent/40 transition-colors">
                     <div>
-                      <p className="font-medium">{event.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(event.startDate).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
+                      <p className="font-semibold text-sm">{event.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {formatDate(event.startDate)}
                       </p>
                     </div>
-                    <Badge>{event._count?.registrations || 0} registered</Badge>
+                    <Badge variant="secondary">{event._count?.registrations || 0} registered</Badge>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No upcoming events</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">No upcoming events found.</p>
             )}
           </CardContent>
         </Card>
 
         {/* Recent Check-ins */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
-              <CardTitle>Recent Check-ins</CardTitle>
-              <CardDescription>Latest check-ins today</CardDescription>
+              <CardTitle className="text-base font-semibold">Recent Check-ins</CardTitle>
+              <CardDescription>Latest attendees checked in</CardDescription>
             </div>
             <Button asChild variant="ghost" size="sm">
               <Link href="/reports">
-                Reports <ArrowRight className="ml-2 h-4 w-4" />
+                Reports <ArrowRight className="ml-1.5 h-4 w-4" />
               </Link>
             </Button>
           </CardHeader>
           <CardContent>
             {recentItems?.recentCheckIns?.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {recentItems.recentCheckIns.map((checkIn: any) => (
-                  <div key={checkIn.id} className="flex items-center justify-between">
+                  <div key={checkIn.id} className="flex items-center justify-between p-2.5 rounded-lg border bg-card">
                     <div>
-                      <p className="font-medium">{checkIn.participant.name}</p>
-                      <p className="text-sm text-muted-foreground">{checkIn.event.name}</p>
+                      <p className="font-semibold text-sm">{checkIn.participant.name}</p>
+                      <p className="text-xs text-muted-foreground">{checkIn.event.name}</p>
                     </div>
                     <div className="text-right">
                       <Badge variant="success">Checked In</Badge>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {new Date(checkIn.checkedInAt).toLocaleTimeString('id-ID', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        {formatDate(checkIn.checkedInAt)}
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No recent check-ins</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">No check-ins recorded yet.</p>
             )}
           </CardContent>
         </Card>
@@ -279,9 +413,25 @@ function OrganizerDashboard({ stats, recentItems }: { stats: any; recentItems: a
 function ParticipantDashboard({ stats, recentItems }: { stats: any; recentItems: any }) {
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">My Dashboard</h1>
-        <p className="text-muted-foreground">Track your event journey</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Participant Dashboard</h1>
+          <p className="text-muted-foreground">Track your event registrations, digital tickets, and attendances.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/my-tickets">
+              <Ticket className="h-4 w-4 mr-2" />
+              My Tickets
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/events">
+              <Calendar className="h-4 w-4 mr-2" />
+              Browse Events
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -301,10 +451,10 @@ function ParticipantDashboard({ stats, recentItems }: { stats: any; recentItems:
           title="Completed Events"
           value={stats?.completed || 0}
           icon={CheckCircle}
-          description="Past events"
+          description="Past attendances"
         />
         <StatCard
-          title="Check-ins"
+          title="Check-ins Verified"
           value={stats?.checkedIn || 0}
           icon={QrCode}
           description="Successful check-ins"
@@ -312,14 +462,14 @@ function ParticipantDashboard({ stats, recentItems }: { stats: any; recentItems:
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div>
-            <CardTitle>My Upcoming Events</CardTitle>
-            <CardDescription>Events you're registered for</CardDescription>
+            <CardTitle className="text-base font-semibold">My Upcoming Events & Tickets</CardTitle>
+            <CardDescription>Events you have registered to attend</CardDescription>
           </div>
           <Button asChild variant="ghost" size="sm">
             <Link href="/my-tickets">
-              View Tickets <ArrowRight className="ml-2 h-4 w-4" />
+              View All Tickets <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>
           </Button>
         </CardHeader>
@@ -329,45 +479,54 @@ function ParticipantDashboard({ stats, recentItems }: { stats: any; recentItems:
               {recentItems.upcomingEvents.map((registration: any) => (
                 <div
                   key={registration.id}
-                  className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3.5 rounded-lg border bg-card hover:bg-accent/30 transition-colors gap-3"
                 >
                   <div className="flex items-center gap-4">
-                    {registration.event.bannerUrl && (
+                    {registration.event.bannerUrl ? (
                       <img
                         src={registration.event.bannerUrl}
                         alt={registration.event.name}
-                        className="h-12 w-12 rounded-md object-cover"
+                        className="h-14 w-14 rounded-md object-cover border"
                       />
+                    ) : (
+                      <div className="h-14 w-14 rounded-md bg-muted flex items-center justify-center border">
+                        <Calendar className="h-6 w-6 text-muted-foreground" />
+                      </div>
                     )}
                     <div>
-                      <p className="font-medium">{registration.event.name}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <p className="font-semibold text-sm">{registration.event.name}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                         <Calendar className="h-3 w-3" />
-                        {new Date(registration.event.startDate).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
+                        <span>{formatDate(registration.event.startDate)}</span>
                         <span>•</span>
                         <span>{registration.event.location}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <Badge variant={registration.checkIn ? 'success' : 'info'}>
-                      {registration.checkIn ? 'Checked In' : 'Confirmed'}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {registration.ticket.name}
-                    </span>
+                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-0">
+                    <div className="flex flex-col sm:items-end gap-0.5">
+                      <Badge variant={registration.checkIn ? 'success' : 'default'} className="text-[11px]">
+                        {registration.checkIn ? 'Checked In' : 'Confirmed'}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground font-mono">
+                        {registration.ticket?.name || 'General Ticket'}
+                      </span>
+                    </div>
+                    <Button asChild size="sm" variant="outline" className="text-xs">
+                      <Link href={`/my-tickets/${registration.id}`}>
+                        Open Ticket
+                      </Link>
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">You haven't registered for any events yet</p>
-              <Button asChild>
+            <div className="text-center py-10">
+              <Ticket className="h-10 w-10 text-muted-foreground/50 mx-auto mb-2" />
+              <p className="font-medium text-foreground text-sm">No event registrations found</p>
+              <p className="text-muted-foreground text-xs mt-1 mb-4">Discover exciting events and reserve your pass.</p>
+              <Button asChild size="sm">
                 <Link href="/events">Browse Events</Link>
               </Button>
             </div>

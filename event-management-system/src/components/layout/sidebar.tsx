@@ -76,7 +76,8 @@ const adminNav: NavItem[] = [
   { title: 'Categories', href: '/categories', icon: Tags },
   { title: 'Reports', href: '/reports', icon: BarChart3 },
   { title: 'Audit Logs', href: '/audit-logs', icon: FileText },
-  { title: 'Settings', href: '/settings', icon: Shield },
+  { title: 'System Settings', href: '/settings', icon: Shield },
+  { title: 'Profile', href: '/profile', icon: Settings },
 ];
 
 export function Sidebar({ user, onSignOut }: SidebarProps) {

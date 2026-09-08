@@ -37,9 +37,13 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { formatCurrency } from '@/lib/utils';
+import { useSearchParams } from 'next/navigation';
 import { exportToExcel, exportToCSV } from '@/lib/export';
 
-export default function ReportsPage() {
+function ReportsContent() {
+  const searchParams = useSearchParams();
+  const initialEventId = searchParams.get('eventId') || undefined;
+
   const [loading, setLoading] = React.useState(true);
   const [events, setEvents] = React.useState<any[]>([]);
   const [selectedEventId, setSelectedEventId] = React.useState<string>('');
@@ -80,8 +84,8 @@ export default function ReportsPage() {
   }, []);
 
   React.useEffect(() => {
-    loadReport();
-  }, [loadReport]);
+    loadReport(initialEventId);
+  }, [loadReport, initialEventId]);
 
   const handleEventChange = (eventId: string) => {
     setSelectedEventId(eventId);
@@ -461,5 +465,13 @@ export default function ReportsPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function ReportsPage() {
+  return (
+    <React.Suspense fallback={<Skeleton className="h-96 w-full rounded-xl" />}>
+      <ReportsContent />
+    </React.Suspense>
   );
 }

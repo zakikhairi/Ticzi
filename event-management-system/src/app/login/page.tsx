@@ -26,6 +26,7 @@ function LoginPageContent() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -112,6 +113,49 @@ function LoginPageContent() {
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
+
+            {/* Quick Demo Login Fillers */}
+            <div className="pt-2 border-t text-xs space-y-2">
+              <p className="text-muted-foreground font-medium text-center">Quick Demo Login (1-Click Fill):</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-[11px] h-7 px-1 text-red-600 hover:text-red-700"
+                  onClick={() => {
+                    setValue('email', 'admin@eventms.com');
+                    setValue('password', 'Password123');
+                  }}
+                >
+                  Super Admin
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-[11px] h-7 px-1 text-blue-600 hover:text-blue-700"
+                  onClick={() => {
+                    setValue('email', 'organizer1@eventms.com');
+                    setValue('password', 'Password123');
+                  }}
+                >
+                  Organizer
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-[11px] h-7 px-1 text-emerald-600 hover:text-emerald-700"
+                  onClick={() => {
+                    setValue('email', 'alice@email.com');
+                    setValue('password', 'Password123');
+                  }}
+                >
+                  Participant
+                </Button>
+              </div>
+            </div>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">

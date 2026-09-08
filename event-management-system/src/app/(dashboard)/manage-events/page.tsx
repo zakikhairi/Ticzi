@@ -37,8 +37,6 @@ import {
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
-import { auth } from '@/lib/auth';
-import prisma from '@/lib/prisma';
 
 export default function OrganizerEventsPage() {
   const router = useRouter();
@@ -74,12 +72,14 @@ export default function OrganizerEventsPage() {
       const response = await fetch(`/api/events/${eventId}/publish`, {
         method: 'POST',
       });
-      if (response.ok) {
-        toast({ title: 'Event published successfully' });
-        loadEvents();
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to publish event');
       }
-    } catch (error) {
-      toast({ title: 'Failed to publish event', variant: 'destructive' });
+      toast({ title: 'Event Published', description: 'Your event is now live and accepting registrations.' });
+      loadEvents();
+    } catch (error: any) {
+      toast({ title: 'Publish Error', description: error.message, variant: 'destructive' });
     }
   };
 
@@ -88,12 +88,14 @@ export default function OrganizerEventsPage() {
       const response = await fetch(`/api/events/${eventId}/unpublish`, {
         method: 'POST',
       });
-      if (response.ok) {
-        toast({ title: 'Event unpublished' });
-        loadEvents();
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to unpublish event');
       }
-    } catch (error) {
-      toast({ title: 'Failed to unpublish event', variant: 'destructive' });
+      toast({ title: 'Event Unpublished', description: 'Event has been converted back to draft.' });
+      loadEvents();
+    } catch (error: any) {
+      toast({ title: 'Unpublish Error', description: error.message, variant: 'destructive' });
     }
   };
 
@@ -105,13 +107,15 @@ export default function OrganizerEventsPage() {
       const response = await fetch(`/api/events/${deleteEvent.id}`, {
         method: 'DELETE',
       });
-      if (response.ok) {
-        toast({ title: 'Event deleted successfully' });
-        setDeleteEvent(null);
-        loadEvents();
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete event');
       }
-    } catch (error) {
-      toast({ title: 'Failed to delete event', variant: 'destructive' });
+      toast({ title: 'Event Deleted', description: `"${deleteEvent.name}" has been deleted.` });
+      setDeleteEvent(null);
+      loadEvents();
+    } catch (error: any) {
+      toast({ title: 'Delete Error', description: error.message, variant: 'destructive' });
     } finally {
       setDeleting(false);
     }

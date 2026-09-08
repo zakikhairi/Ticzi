@@ -91,12 +91,12 @@ export async function getEventBySlug(slug: string) {
 }
 
 export async function createEvent(data: CreateEventInput, organizerId: string) {
-  const slug = generateSlug(data.name);
+  let slug = generateSlug(data.name);
 
-  // Check if slug already exists
+  // Check if slug already exists, if so append unique random suffix
   const existingEvent = await prisma.event.findUnique({ where: { slug } });
   if (existingEvent) {
-    throw new Error('Event with this name already exists');
+    slug = `${slug}-${Math.random().toString(36).substring(2, 7)}`;
   }
 
   return prisma.event.create({
@@ -120,7 +120,14 @@ export async function updateEvent(id: string, data: UpdateEventInput) {
   const updateData: any = { ...data };
 
   if (data.name) {
-    updateData.slug = generateSlug(data.name);
+    let slug = generateSlug(data.name);
+    const existing = await prisma.event.findFirst({
+      where: { slug, NOT: { id } },
+    });
+    if (existing) {
+      slug = `${slug}-${Math.random().toString(36).substring(2, 7)}`;
+    }
+    updateData.slug = slug;
   }
 
   if (data.startDate) updateData.startDate = new Date(data.startDate);

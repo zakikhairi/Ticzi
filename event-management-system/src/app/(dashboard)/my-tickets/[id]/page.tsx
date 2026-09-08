@@ -23,10 +23,16 @@ export default async function TicketDetailPage({ params }: TicketDetailPageProps
   }
 
   const registration = await prisma.registration.findFirst({
-    where: {
-      id,
-      participantId: session.user.id,
-    },
+    where:
+      session.user.role === 'SUPER_ADMIN'
+        ? { id }
+        : {
+            id,
+            OR: [
+              { participantId: session.user.id },
+              { event: { organizerId: session.user.id } },
+            ],
+          },
     include: {
       event: {
         include: {

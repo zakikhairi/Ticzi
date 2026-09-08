@@ -100,10 +100,18 @@ export default function EditEventPage() {
   const onSubmit = async (data: UpdateEventInput) => {
     setSubmitting(true);
     try {
+      const payload = {
+        ...data,
+        maxParticipants:
+          data.maxParticipants && !isNaN(Number(data.maxParticipants)) && Number(data.maxParticipants) > 0
+            ? Number(data.maxParticipants)
+            : undefined,
+      };
+
       const response = await fetch(`/api/events/${eventId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();

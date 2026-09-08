@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import prisma from '@/lib/prisma';
 import {
   getOrganizerDashboardStats,
   getRegistrationTrend,
@@ -23,11 +24,33 @@ export async function GET() {
     const { id: userId, role } = session.user;
 
     if (role === 'SUPER_ADMIN') {
-      const systemStats = await getSystemStats();
+      const [systemStats, trend, ticketSales, eventStatus, recentRegs, upcoming, recentAuditLogs] = await Promise.all([
+        getSystemStats(),
+        getRegistrationTrend(undefined, 30),
+        getTicketSalesByEvent(undefined),
+        getEventStatusDistribution(undefined),
+        getRecentRegistrations(undefined, 5),
+        getUpcomingEvents(undefined, 5),
+        prisma.auditLog.findMany({
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
+        }),
+      ]);
+
       return NextResponse.json({
         role,
         stats: systemStats,
-        recentItems: {},
+        recentItems: {
+          trend,
+          ticketSales,
+          eventStatus,
+          recentRegs,
+          upcoming,
+          recentAuditLogs,
+        },
       });
     }
 

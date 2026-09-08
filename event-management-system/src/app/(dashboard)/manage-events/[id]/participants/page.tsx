@@ -184,21 +184,27 @@ export default function ParticipantsPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <Select value={ticketFilter} onValueChange={setTicketFilter}>
+            <Select
+              value={ticketFilter || 'ALL'}
+              onValueChange={(val) => setTicketFilter(val === 'ALL' ? '' : val)}
+            >
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Ticket Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Tickets</SelectItem>
+                <SelectItem value="ALL">All Tickets</SelectItem>
                 {/* Add ticket types dynamically if needed */}
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select
+              value={statusFilter || 'ALL'}
+              onValueChange={(val) => setStatusFilter(val === 'ALL' ? '' : val)}
+            >
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="ALL">All Status</SelectItem>
                 <SelectItem value="CONFIRMED">Confirmed</SelectItem>
                 <SelectItem value="PENDING">Pending</SelectItem>
                 <SelectItem value="CHECKED_IN">Checked In</SelectItem>

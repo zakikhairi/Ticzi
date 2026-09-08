@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import prisma from '@/lib/prisma';
 import { RegistrationButton } from './registration-button';
+import { PublicHeader } from '@/components/layout/public-header';
 import { formatCurrency } from '@/lib/utils';
 
 interface EventDetailPageProps {
@@ -47,7 +48,9 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
     : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
+      <PublicHeader />
+
       {/* Banner */}
       {event.bannerUrl && (
         <div className="relative h-64 md:h-80 lg:h-96">
