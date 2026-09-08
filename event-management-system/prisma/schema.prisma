@@ -1,0 +1,315 @@
+// Prisma Schema for Event Management System
+// Using Neon PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  SUPER_ADMIN
+  ORGANIZER
+  PARTICIPANT
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum TicketStatus {
+  ACTIVE
+  INACTIVE
+  SOLD_OUT
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  CHECKED_IN
+}
+
+enum CheckInStatus {
+  SUCCESS
+  ALREADY_CHECKED_IN
+  INVALID
+}
+
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole @default(PARTICIPANT)
+  phone     String?
+  institution String?
+  image     String?
+  emailVerified DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations - using organizerId as foreign key, not relation field
+  organizedEvents  Event[]         @relation("EventOrganizer")
+  registrations   Registration[]
+  checkInsOfficer CheckIn[]       @relation("CheckInOfficer")
+  checkInsAsUser CheckIn[]       @relation("CheckInParticipant")
+  auditLogs      AuditLog[]
+  accounts       Account[]
+  sessions       Session[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// PERMISSIONS & ROLES (Reference only - using enum for simplicity)
+// ============================================
+
+model Role {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  permissions RolePermission[]
+
+  @@index([name])
+}
+
+model Permission {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roles RolePermission[]
+
+  @@index([name])
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+// ============================================
+// EVENT MANAGEMENT
+// ============================================
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  events Event[]
+
+  @@index([name])
+}
+
+model Event {
+  id                 String      @id @default(uuid())
+  organizerId        String
+  categoryId         String
+  name               String
+  slug               String      @unique
+  description        String?     @db.Text
+  bannerUrl          String?
+  location           String
+  address            String?     @db.Text
+  startDate          DateTime
+  endDate            DateTime
+  registrationStart  DateTime
+  registrationEnd    DateTime
+  maxParticipants    Int?
+  status             EventStatus @default(DRAFT)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  // Relations
+  organizer     User            @relation("EventOrganizer", fields: [organizerId], references: [id])
+  category      Category        @relation(fields: [categoryId], references: [id])
+  tickets       Ticket[]
+  registrations Registration[]
+  checkIns     CheckIn[]
+
+  @@index([organizerId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([slug])
+  @@index([startDate])
+}
+
+// ============================================
+// TICKETING SYSTEM
+// ============================================
+
+model Ticket {
+  id          String       @id @default(uuid())
+  eventId     String
+  name        String
+  description String?
+  price       Decimal      @default(0) @db.Decimal(10, 2)
+  quota       Int
+  sold        Int          @default(0)
+  saleStart   DateTime
+  saleEnd     DateTime
+  status      TicketStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  event         Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  registrations Registration[]
+
+  @@index([eventId])
+  @@index([status])
+}
+
+// ============================================
+// REGISTRATION
+// ============================================
+
+model Registration {
+  id            String             @id @default(uuid())
+  eventId       String
+  participantId String
+  ticketId      String
+  ticketCode    String             @unique
+  qrToken       String             @unique
+  status        RegistrationStatus @default(PENDING)
+  fullName      String
+  email         String
+  phone         String?
+  institution   String?
+  additionalInfo String?          @db.Text
+  registeredAt  DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Relations
+  event       Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participant User      @relation(fields: [participantId], references: [id])
+  ticket      Ticket    @relation(fields: [ticketId], references: [id])
+  checkIn     CheckIn?
+
+  @@unique([eventId, participantId])
+  @@index([eventId])
+  @@index([participantId])
+  @@index([ticketId])
+  @@index([ticketCode])
+  @@index([qrToken])
+  @@index([status])
+}
+
+// ============================================
+// CHECK-IN
+// ============================================
+
+model CheckIn {
+  id            String         @id @default(uuid())
+  registrationId String        @unique
+  eventId       String
+  participantId String
+  ticketId      String
+  checkedInBy   String
+  checkedInAt   DateTime       @default(now())
+  status        CheckInStatus  @default(SUCCESS)
+
+  // Relations
+  registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  event        Event        @relation(fields: [eventId], references: [id])
+  participant  User         @relation("CheckInParticipant", fields: [participantId], references: [id])
+  checkedBy    User         @relation("CheckInOfficer", fields: [checkedInBy], references: [id])
+
+  @@index([eventId])
+  @@index([participantId])
+  @@index([checkedInBy])
+}
+
+// ============================================
+// AUDIT LOG
+// ============================================
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String
+  entity     String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+}
