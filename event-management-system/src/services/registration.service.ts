@@ -43,7 +43,43 @@ export async function registerForEvent(participantId: string, data: Registration
   });
 
   if (existingRegistration) {
-    throw new Error('You have already registered for this event');
+    // If user is already registered, update their registration to the newly selected ticket
+    return prisma.$transaction(async (tx) => {
+      if (existingRegistration.ticketId !== data.ticketId) {
+        if (existingRegistration.ticketId) {
+          await tx.ticket
+            .update({
+              where: { id: existingRegistration.ticketId },
+              data: { sold: { decrement: 1 } },
+            })
+            .catch(() => {});
+        }
+        await tx.ticket.update({
+          where: { id: data.ticketId },
+          data: { sold: { increment: 1 } },
+        });
+      }
+
+      const updated = await tx.registration.update({
+        where: { id: existingRegistration.id },
+        data: {
+          ticketId: data.ticketId,
+          status: RegistrationStatus.CONFIRMED,
+          fullName: data.fullName,
+          email: data.email,
+          phone: data.phone,
+          institution: data.institution,
+          additionalInfo: data.additionalInfo,
+        },
+        include: {
+          event: true,
+          ticket: true,
+          participant: { select: { id: true, name: true, email: true } },
+        },
+      });
+
+      return updated;
+    });
   }
 
   // Create registration with transaction

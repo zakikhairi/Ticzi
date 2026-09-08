@@ -157,25 +157,6 @@ export function RegistrationButton({
     return <Button disabled className="w-full">Memuat...</Button>;
   }
 
-  // Already registered: direct link to ticket
-  if (existingRegistrationId) {
-    return (
-      <div className="space-y-2">
-        <Button
-          asChild
-          className="w-full rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 shadow-md shadow-emerald-600/20"
-        >
-          <Link href={`/my-tickets/${existingRegistrationId}`}>
-            ✓ Anda Sudah Terdaftar (Buka Tiket)
-          </Link>
-        </Button>
-        <p className="text-center text-xs text-muted-foreground">
-          Tiket Anda aktif untuk event ini.
-        </p>
-      </div>
-    );
-  }
-
   if (!session) {
     return (
       <div className="space-y-3">
@@ -202,11 +183,34 @@ export function RegistrationButton({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); setFormError(null); }}>
-      <DialogTrigger asChild>
-        <Button className="w-full rounded-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-semibold py-2.5 shadow-md shadow-rose-500/20">
-          Daftar Sekarang
-        </Button>
-      </DialogTrigger>
+      {existingRegistrationId ? (
+        <div className="space-y-2">
+          <Button
+            asChild
+            className="w-full rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 shadow-md shadow-emerald-600/20"
+          >
+            <Link href={`/my-tickets/${existingRegistrationId}`}>
+              ✓ Anda Sudah Memiliki Tiket (Buka Tiket)
+            </Link>
+          </Button>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full rounded-full text-xs font-medium text-muted-foreground hover:text-foreground border-dashed"
+            >
+              Ganti Jenis Tiket / Perbarui Data
+            </Button>
+          </DialogTrigger>
+        </div>
+      ) : (
+        <DialogTrigger asChild>
+          <Button className="w-full rounded-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-semibold py-2.5 shadow-md shadow-rose-500/20">
+            Daftar Sekarang
+          </Button>
+        </DialogTrigger>
+      )}
+
       <DialogContent className="sm:max-w-[500px] rounded-3xl">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
