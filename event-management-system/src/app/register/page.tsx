@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { registerSchema, type RegisterInput } from '@/schemas';
+import { cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,10 +26,17 @@ function RegisterPageContent() {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      role: 'PARTICIPANT',
+    },
   });
+
+  const selectedRole = watch('role') || 'PARTICIPANT';
 
   const onSubmit = async (data: RegisterInput) => {
     setIsLoading(true);
@@ -39,6 +47,7 @@ function RegisterPageContent() {
         ...data,
         email: data.email.trim().toLowerCase(),
         name: data.name.trim(),
+        role: data.role || 'PARTICIPANT',
         phone: data.phone?.trim() || undefined,
         institution: data.institution?.trim() || undefined,
       };
@@ -104,7 +113,9 @@ function RegisterPageContent() {
           <div>
             <CardTitle className="text-2xl font-extrabold tracking-tight">Daftar Akun Baru</CardTitle>
             <CardDescription className="text-xs text-muted-foreground mt-1">
-              Bergabunglah di Ticzi untuk memesan tiket event seru
+              {selectedRole === 'ORGANIZER'
+                ? 'Kelola penjualan tiket & publikasikan event Anda'
+                : 'Bergabunglah di Ticzi untuk memesan tiket event seru'}
             </CardDescription>
           </div>
         </CardHeader>
@@ -126,6 +137,76 @@ function RegisterPageContent() {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
+            {/* Pilihan Peran Akun (Role) */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">
+                Daftar Sebagai <span className="text-rose-500">*</span>
+              </Label>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setValue('role', 'PARTICIPANT')}
+                  className={cn(
+                    'p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1.5 relative overflow-hidden cursor-pointer',
+                    selectedRole === 'PARTICIPANT'
+                      ? 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/30 text-rose-950 dark:text-rose-100 ring-2 ring-rose-500/20 shadow-sm'
+                      : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-card text-foreground'
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xl">🎟️</span>
+                    <span
+                      className={cn(
+                        'h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors',
+                        selectedRole === 'PARTICIPANT'
+                          ? 'bg-rose-500 text-white'
+                          : 'border border-zinc-300 dark:border-zinc-700 text-transparent'
+                      )}
+                    >
+                      ✓
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-xs">Partisipan</p>
+                    <p className="text-[10px] text-muted-foreground leading-snug mt-0.5">
+                      Beli tiket & ikuti event
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setValue('role', 'ORGANIZER')}
+                  className={cn(
+                    'p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1.5 relative overflow-hidden cursor-pointer',
+                    selectedRole === 'ORGANIZER'
+                      ? 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/30 text-rose-950 dark:text-rose-100 ring-2 ring-rose-500/20 shadow-sm'
+                      : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-card text-foreground'
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xl">🎪</span>
+                    <span
+                      className={cn(
+                        'h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors',
+                        selectedRole === 'ORGANIZER'
+                          ? 'bg-rose-500 text-white'
+                          : 'border border-zinc-300 dark:border-zinc-700 text-transparent'
+                      )}
+                    >
+                      ✓
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-xs">Organizer</p>
+                    <p className="text-[10px] text-muted-foreground leading-snug mt-0.5">
+                      Buat & kelola event
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="name" className="text-xs font-semibold">
                 Nama Lengkap <span className="text-rose-500">*</span>
@@ -213,12 +294,12 @@ function RegisterPageContent() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="institution" className="text-xs font-medium text-zinc-500">
-                  Instansi (Opsional)
+                  {selectedRole === 'ORGANIZER' ? 'Organisasi / EO' : 'Instansi'} (Opsional)
                 </Label>
                 <Input
                   id="institution"
                   type="text"
-                  placeholder="Univ / Perusahaan"
+                  placeholder={selectedRole === 'ORGANIZER' ? 'Nama EO / Komunitas' : 'Univ / Perusahaan'}
                   className="rounded-xl"
                   {...register('institution')}
                   disabled={isLoading}
