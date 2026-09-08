@@ -180,49 +180,79 @@ export async function getOrganizerRecentCheckIns(organizerId: string, limit = 10
 
 // Participant Dashboard
 export async function getParticipantDashboardStats(participantId: string) {
+  const now = new Date();
   const [
-    totalRegistered,
-    upcoming,
-    completed,
-    checkedIn,
+    ownedTickets,
+    upcomingTickets,
+    usedTickets,
+    unpaidTickets,
   ] = await Promise.all([
-    prisma.registration.count({
-      where: { participantId },
-    }),
+    // 1. Tiket Yang Anda Punya (CONFIRMED or CHECKED_IN)
     prisma.registration.count({
       where: {
         participantId,
+        status: { in: [RegistrationStatus.CONFIRMED, RegistrationStatus.CHECKED_IN] },
+      },
+    }),
+    // 2. Tiket Akan Berlangsung (CONFIRMED, no check-in, event startDate >= now)
+    prisma.registration.count({
+      where: {
+        participantId,
+        status: RegistrationStatus.CONFIRMED,
+        checkIn: null,
         event: {
-          startDate: { gte: new Date() },
+          startDate: { gte: now },
           status: { in: [EventStatus.PUBLISHED, EventStatus.ONGOING] },
         },
       },
     }),
+    // 3. Tiket Sudah Digunakan (CHECKED_IN or has checkIn record)
     prisma.registration.count({
       where: {
         participantId,
-        event: {
-          OR: [
-            { status: EventStatus.COMPLETED },
-            { endDate: { lt: new Date() } },
-          ],
-        },
+        OR: [
+          { status: RegistrationStatus.CHECKED_IN },
+          { checkIn: { isNot: null } },
+        ],
       },
     }),
+    // 4. Tiket Belum Dibayar (PENDING)
     prisma.registration.count({
       where: {
         participantId,
-        status: RegistrationStatus.CHECKED_IN,
+        status: RegistrationStatus.PENDING,
       },
     }),
   ]);
 
   return {
-    totalRegistered,
-    upcoming,
-    completed,
-    checkedIn,
+    ownedTickets,
+    upcomingTickets,
+    usedTickets,
+    unpaidTickets,
+    // Backward compatibility aliases
+    totalRegistered: ownedTickets,
+    upcoming: upcomingTickets,
+    completed: usedTickets,
+    checkedIn: usedTickets,
   };
+}
+
+export async function getParticipantTickets(participantId: string) {
+  return prisma.registration.findMany({
+    where: { participantId },
+    orderBy: { registeredAt: 'desc' },
+    include: {
+      event: {
+        include: {
+          category: true,
+          organizer: { select: { id: true, name: true, email: true } },
+        },
+      },
+      ticket: true,
+      checkIn: true,
+    },
+  });
 }
 
 export async function getParticipantUpcomingEvents(participantId: string, limit = 5) {

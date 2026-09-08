@@ -11,6 +11,7 @@ import {
   getOrganizerRecentCheckIns,
   getParticipantDashboardStats,
   getParticipantUpcomingEvents,
+  getParticipantTickets,
   getSystemStats,
 } from '@/services/dashboard.service';
 
@@ -73,15 +74,16 @@ export async function GET() {
     }
 
     // Default: PARTICIPANT
-    const [participantStats, upcomingEvents] = await Promise.all([
+    const [participantStats, upcomingEvents, allTickets] = await Promise.all([
       getParticipantDashboardStats(userId),
       getParticipantUpcomingEvents(userId, 5),
+      getParticipantTickets(userId),
     ]);
 
     return NextResponse.json({
       role,
       stats: participantStats,
-      recentItems: { upcomingEvents },
+      recentItems: { upcomingEvents, tickets: allTickets },
     });
   } catch (error) {
     console.error('Failed to fetch dashboard data:', error);

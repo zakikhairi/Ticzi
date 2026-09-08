@@ -13,6 +13,7 @@ export type AuditAction =
   | 'UPDATE_TICKET'
   | 'DELETE_TICKET'
   | 'REGISTRATION'
+  | 'PAYMENT_SUCCESS'
   | 'CANCEL_REGISTRATION'
   | 'CHECK_IN'
   | 'UPDATE_PROFILE'

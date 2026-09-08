@@ -485,6 +485,39 @@ async function main() {
     registrations.push(registration);
   }
 
+  // Explicitly register Participant 0 for additional categories (Upcoming & Unpaid)
+  const upcomingRegUser = await prisma.registration.create({
+    data: {
+      eventId: events[1].id,
+      participantId: participants[0].id,
+      ticketId: tickets[4].id,
+      ticketCode: `TKT-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+      qrToken: `QR-${Math.random().toString(36).substring(2, 34)}`,
+      status: 'CONFIRMED',
+      fullName: participants[0].name,
+      email: participants[0].email,
+      phone: participants[0].phone,
+      institution: participants[0].institution,
+    },
+  });
+  registrations.push(upcomingRegUser);
+
+  const unpaidRegUser = await prisma.registration.create({
+    data: {
+      eventId: events[2].id,
+      participantId: participants[0].id,
+      ticketId: tickets[5].id,
+      ticketCode: `TKT-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+      qrToken: `QR-${Math.random().toString(36).substring(2, 34)}`,
+      status: 'PENDING',
+      fullName: participants[0].name,
+      email: participants[0].email,
+      phone: participants[0].phone,
+      institution: participants[0].institution,
+    },
+  });
+  registrations.push(unpaidRegUser);
+
   console.log('📝 Created registrations and check-ins');
 
   // Create Audit Logs
